@@ -16,7 +16,7 @@ locale.textdomain('pardus-belgeara')
 GLADE_FILE = os.path.dirname(os.path.abspath(__file__)) + "/../ui/MainWindow.glade"
 
 
-class pardus_belgeara:
+class pardusbelgeara:
     def __init__(self):
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GLADE_FILE)
@@ -28,11 +28,11 @@ class pardus_belgeara:
         # -------Signals-------
         # Main Window
         self.mainwindow.connect("destroy", self._on_destroy)
-
+        self.mainwindow.show_all()
 
     def _on_destroy(self, widget):
         Gtk.main_quit()
 
-app = pardus_belgeara()
+app = pardusbelgeara()
 Gtk.main()
 
