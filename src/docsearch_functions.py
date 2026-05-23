@@ -1,5 +1,6 @@
 from pathlib import Path
 import docdatabase
+import docextract
 import os
 
 
@@ -28,4 +29,25 @@ def files_list():
             flist.append(str(file))
 
     return flist
+
+
+# this function is used to write the submitted file to the database
+def embedfile(file):
+    filetype = file[-3:]
+
+    homefolder = Path.home()
+    dbpath = homefolder / ".cache" / "pardus-docsearch"  # location where the database will be placed
+
+    conn, cur = docdatabase.init_storage(dbpath / "docdatabase.db")
+
+    if filetype != "pdf" and filetype != "txt":
+      return False
+    with open(file, "rb") as rdfile:
+      data = rdfile.read()
+    if filetype == "pdf":
+        docextract.index_pdf_bytes(file, data, conn, cur)
+    elif filetype == "txt":
+        docextract.index_txt_bytes(file, data, conn, cur)
+
+    return True
 
