@@ -11,13 +11,13 @@ import docsearch
 import docextract
 from docsearch_functions import files_list
 
-locale.bindtextdomain('pardus-belgeara', '/usr/share/locale')
-locale.textdomain('pardus-belgeara')
+locale.bindtextdomain('pardus-docsearch', '/usr/share/locale')
+locale.textdomain('pardus-docsearch')
 
 GLADE_FILE = os.path.dirname(os.path.abspath(__file__)) + "/../ui/MainWindow.glade"
 
 
-class pardusbelgeara:
+class pardusdocsearch:
     def __init__(self):
         self.builder = Gtk.Builder()
         self.builder.add_from_file(GLADE_FILE)
@@ -26,6 +26,8 @@ class pardusbelgeara:
         # Main Window
         self.mainwindow = self.builder.get_object("mainwindow")  # home window
         self.listbox    = self.builder.get_object("listbox")  # listbox object
+        self.scrolled_window = self.builder.get_object("scrolled_window")  # scrolled window
+        self.scrolled_window.set_min_content_height(400)  # the height of the list window is being adjusted in pixels
 
         # -------Signals-------
         # Main Window
@@ -53,6 +55,6 @@ class pardusbelgeara:
     def _on_destroy(self, widget):
         Gtk.main_quit()
 
-app = pardusbelgeara()
+app = pardusdocsearch()
 Gtk.main()
 
