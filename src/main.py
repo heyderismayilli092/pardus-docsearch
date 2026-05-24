@@ -110,7 +110,7 @@ class pardusdocsearch:
                 break
 
             if doc_path is None:
-                self.scan_done = True
+                self.listbox_done = True
                 break
 
             filename = os.path.basename(doc_path)
@@ -119,7 +119,7 @@ class pardusdocsearch:
             self.listbox.add(row)
 
         # the main screen will not be accessed until the result of both operations is True, and `return True` will continue to run
-        if self.scan_done and self.embed_done:
+        if self.listbox_done and self.embed_done:
             self.mainstack.set_visible_child_name("mainbox")
             self.listbox.show_all()
             return False
@@ -134,9 +134,13 @@ class pardusdocsearch:
         # ICON box
         if filename[-3:] == "pdf":
           image = Gtk.Image.new_from_icon_name("application-pdf", Gtk.IconSize.BUTTON)
+          image.set_halign(Gtk.Align.START)
         elif filename[-3:] == "txt":
           image = Gtk.Image.new_from_icon_name("text-x-generic", Gtk.IconSize.BUTTON)
-        image.set_halign(Gtk.Align.START)
+          image.set_halign(Gtk.Align.START)
+        else:
+          image = Gtk.Image.new_from_icon_name("text-x-generic", Gtk.IconSize.BUTTON)
+          image.set_halign(Gtk.Align.START)
 
         # TEXT box and labels
         text_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
