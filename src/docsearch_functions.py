@@ -17,7 +17,7 @@ def check_database():
 
 # a function that lists all files on the computer
 def files_list():
-    homefolder = Path.home() / "collectionsgpt"  # şimdilik
+    homefolder = Path.home()
 
     flist = []
     formats = [".txt", ".pdf"]
@@ -61,7 +61,10 @@ def search(content):
     output = docsearch.bm25_search(dbpath, content)  # searching for the sent text
     for f in output["results"]:
         if not f["source"] in [d["source"] for d in find_sources]:  # a poll is being conducted to add the same result to the list only once
-          find_sources.append({"source": f["source"], "score": f["score"], "chunk": f["chunk"]})
+          if f["type"] == "pdf":
+            find_sources.append({"source": f["source"], "score": f["score"], "chunk": f["chunk"], "pagenum": f["page"]})
+          else:
+            find_sources.append({"source": f["source"], "score": f["score"], "chunk": f["chunk"]})
 
     return find_sources
 
