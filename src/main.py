@@ -45,19 +45,19 @@ class pardusdocsearch:
         self.mainstack.set_visible_child_name("page0")
         GLib.idle_add(self.start_background_once)  # the process will run in the background immediately after the application starts
 
-        self.doc_queue = queue.Queue()  # process queue structure  Thread -> main thread data transfer
+        # process queue structure
+        self.doc_queue = queue.Queue()
         self.db_queue = queue.Queue()
 
         self._consuming = False
-        self.listbox_done = False
-        self.embed_done = False
+        self.listbox_done = False  # once objects are entered into the list box, this variable is set to "True" when the process is complete
+        self.embed_done = False  # This variable is set to "True" after the database embedding process is complete
 
 
     def start_background_once(self):
         # start worker thread
-        threading.Thread(target=self._worker_produce_rows, daemon=True).start()
-
-        threading.Thread(target=self.db_embed_worker, daemon=True).start()
+        threading.Thread(target=self.docs_list_process, daemon=True).start()  # listing files, printing to database
+        threading.Thread(target=self.db_embed_worker, daemon=True).start()  # write operation to the database
 
         # start the loop that consumes the queue in the main thread
         if not self._consuming:
@@ -65,10 +65,9 @@ class pardusdocsearch:
             GLib.timeout_add(100, self._consume_queue)  # consume at 100 ms intervals
         return False
 
-
-    def _worker_produce_rows(self):
-        # heavy work: listing files, printing to database
-        for f in files_list():  # files_list() --- May be CPU/IO bound
+    # listing files, printing to database
+    def docs_list_process(self):
+        for f in files_list():  # files_list() --- (may be CPU/IO bound)
             self.doc_queue.put(f)
             self.db_queue.put(f)
         self.listbox_done = True
@@ -76,40 +75,40 @@ class pardusdocsearch:
         self.doc_queue.put(None)
         self.db_queue.put(None)
 
-
+    # write operation to the database
     def db_embed_worker(self):
         while True:
-            doc_path = self.db_queue.get()
+            doc_path = self.db_queue.get()  # the process will not proceed to other operations until data arrives from the db_queue queue
             if doc_path is None:
                 break
-            embedfile(doc_path)
+            embedfile(doc_path)  # the process of writing to the database is being performed
+            self.status_label.set_text(f"Writing:\n{doc_path}")
         self.embed_done = True
 
 
+    # queue consume loop
     def _consume_queue(self):
         processed_any = False
         while True:
             try:
-                path = self.doc_queue.get_nowait()
+                doc_path = self.doc_queue.get_nowait()
             except queue.Empty:
                 break
 
-        if path is None:
-            # process finished
-            self.listbox_done = True
-            return False
+            if doc_path is None:
+                self.scan_done = True
+                break
 
-        filename = os.path.basename(path)
-        row = self.create_row(filename, path)
-        self.listbox.add(row)
+            filename = os.path.basename(doc_path)
+            row = self.create_row(filename, doc_path)
+            self.listbox.add(row)
 
-        self.status_label.set_label(f"Writing:\n{doc_path}")
-
-        if self.listbox_done and self.embed_done:
+        # the main screen will not be accessed until the result of both operations is True, and `return True` will continue to run
+        if self.scan_done and self.embed_done:
             self.mainstack.set_visible_child_name("mainbox")
+            self.listbox.show_all()
             return False
 
-        processed_any = True
         return True
 
 
