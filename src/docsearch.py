@@ -28,10 +28,8 @@ def load_bm25(db_path):
 
 # search with BM25
 def bm25_search(db_path, query):
-    conn, cur = docdatabase.get_conn(dbpath)
-
     top_k = 50  # the number of most relevant results to be returned is set to 50
-    rows, bm25 = load_bm25(db_path, cur)
+    rows, bm25 = load_bm25(db_path)
 
     tokens = query.lower().split()
     scores = bm25.get_scores(tokens)  # the relevance scores of each query to each document are calculated
@@ -59,8 +57,6 @@ def bm25_search(db_path, query):
             "score": float(score),
             "chunk": chunk
         })
-
-    conn.close()
 
     return { "results": results }
 
