@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=Pardus Document Search
+Name[tr]=Pardus Belge Ara
+GenericName=Document Search
+GenericName[tr]=Belge Ara
+Comment=Search your documents based on their content
+Comment[tr]=İçeriklerine göre belgeleriniz arasında arama yapın
+Exec=pardus-docsearch
+Icon=/usr/share/icons/hicolor/scalable/apps/pardus-docsearch.png
+Terminal=false
+Type=Application
+Categories=GTK;System;X-Pardus-Apps;
+StartupNotify=true
+Keywords=document;file;pdf;
+Keywords[tr]=belge;dosya;pdf;
