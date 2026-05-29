@@ -12,7 +12,7 @@
     <property name="website">https://github.com/heyderismayilli092/pardus-docsearch</property>
     <property name="website-label" translatable="yes">Web Page</property>
     <property name="authors">Heydar Ismayilli &lt;heyderismayilli092@gmail.com&gt;</property>
-    <property name="logo">usr/share/icons/hicolor/scalable/apps/pardus-docsearch.png</property>
+    <property name="logo">/usr/share/icons/hicolor/scalable/apps/pardus-docsearch.png</property>
     <property name="license-type">gpl-3-0</property>
     <child internal-child="vbox">
       <object class="GtkBox">
@@ -114,7 +114,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkLabel" id="total_files">
+                      <object class="GtkLabel" id="info_label">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="margin-left">5</property>
@@ -209,7 +209,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="status_label">
+              <object class="GtkLabel" id="status_label1">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">Retrieve files list...</property>
@@ -237,6 +237,43 @@
             <property name="name">page0</property>
             <property name="title" translatable="yes">page0</property>
             <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="page1">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkSpinner">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="active">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="status_label2">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">The search in progress, please wait...</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="name">page1</property>
+            <property name="title" translatable="yes">page1</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>

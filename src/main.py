@@ -35,8 +35,8 @@ class pardusdocsearch:
         self.listbox    = self.builder.get_object("listbox")  # listbox object
         self.mainstack      = self.builder.get_object("main_stack")
         self.scrolled_window = self.builder.get_object("scrolled_window")  # scrolled window
-        self.status_label    = self.builder.get_object("status_label")  # status label
-        self.total_files     = self.builder.get_object("total_files")  # total files
+        self.status_label1    = self.builder.get_object("status_label1")  # status label
+        self.info_label     = self.builder.get_object("info_label")  # total files
         self.warning_label1    = self.builder.get_object("warning_label1")  # warning label
         self.warning_label2    = self.builder.get_object("warning_label2")  # warning label
         self.searchbutton    = self.builder.get_object("searchbutton")  # search button
@@ -64,7 +64,6 @@ class pardusdocsearch:
         homefolder = Path.home()
         self.dbpath = homefolder / ".cache" / "pardus-docsearch" / "docdatabase.db"  # location where the database will be placed
         self.listagain_btn.hide()
-        self.warning_label1.set_label(_("The process of writing files from your computer to the database may take a long time\nDo not close the screen until the process is complete"))  # warning message is being printed
         self.warning_label2.hide()  # hide warning label
         self.mainstack.set_visible_child_name("page0")
         self.db_total_files = docdatabase.totalfiles(self.dbpath)
@@ -109,16 +108,17 @@ class pardusdocsearch:
         srcpath = cur.execute("SELECT source_name FROM documents").fetchall()
         srcpath = [r[0] for r in srcpath]
 
+        self.warning_label1.set_label(_("The process of writing files from your computer to the database may take a long time\nDo not close the screen until the process is complete"))  # warning message is being printed
         while True:
             doc_path = self.db_queue.get()  # the process will not proceed to other operations until data arrives from the db_queue queue
             if doc_path is None:
                 break
             # the existence of the same data in the database is checked
             if doc_path in srcpath:
-                self.status_label.set_text(_("Skipped:\n")+doc_path)
+                self.status_label1.set_text(_("Skipped:\n")+doc_path)
                 continue
             else:
-                self.status_label.set_text(_("Writing:\n")+doc_path)
+                self.status_label1.set_text(_("Writing:\n")+doc_path)
                 embedfile(doc_path)  # the process of writing to the database is being performed
         self.embed_done = True
 
@@ -144,7 +144,7 @@ class pardusdocsearch:
         # the main screen will not be accessed until the result of both operations is True, and `return True` will continue to run
         if self.listbox_done and self.embed_done:
             self.mainstack.set_visible_child_name("mainbox")
-            self.total_files.set_label(_("Total files: ")+str(self.db_total_files))
+            self.info_label.set_label(_("Total files: ")+str(self.db_total_files))
             self.listbox.show_all()
             return False
 
@@ -217,14 +217,22 @@ class pardusdocsearch:
         subprocess.run(["thunar", fullpath])
 
 
+    # ----SEARCH PROCESS----
     # search button
     def on_search(self, button):
+        self.warning_label2.hide()  # it is closed if an error message is displayed
+        self.mainstack.set_visible_child_name("page1")
+        # Arka planda çalışacak thread'i başlat
+        thread = threading.Thread(target=self.search_process, daemon=True)
+        thread.start()
+
+    def search_process(self):
         searchcontent = self.search_entry.get_text()
         if len(searchcontent) == 0:
+            self.mainstack.set_visible_child_name("mainbox")
             self.warning_label2.show()
             self.warning_label2.set_label("Enter some text to search!")
             return False
-        self.warning_label2.hide()  # it is closed if an error message is displayed
         output = search(searchcontent)  # searching content
         # clearing a populated listbox object
         for row in self.listbox.get_children():
@@ -238,8 +246,14 @@ class pardusdocsearch:
             else:
                 row = self.create_row(srcname, f["source"], _("Content:\n")+f["chunk"], "0")
             self.listbox.add(row)
+        GLib.idle_add(self.search_process_done)
+
+    def search_process_done(self):
+        self.mainstack.set_visible_child_name("mainbox")
         self.listbox.show_all()
         self.listagain_btn.show()  # to return to the entire file list after the search is complete, the button must be active
+        return False  # 'GLib.idle_add' callback'ı tekrar çağrılmasın
+    # ----------------------
 
 
     # list again button
