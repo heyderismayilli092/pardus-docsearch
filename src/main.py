@@ -43,9 +43,6 @@ class pardusdocsearch:
         self.listagain_btn   = self.builder.get_object("list_again")  # list again button
         self.search_entry    = self.builder.get_object("search_entry")  # search entry box
         self.aboutbtn        = self.builder.get_object("about_button")  # about button
-        self.search_entry.set_width_chars(40)  # length of the text box
-        self.search_entry.set_placeholder_text(_("Enter the content:"))  # placeholder
-        self.scrolled_window.set_min_content_height(400)  # the height of the list window is being adjusted in pixels
 
         # About Window
         self.about_dialog = self.builder.get_object("about_dialog")  # about screen
@@ -65,6 +62,10 @@ class pardusdocsearch:
         self.dbpath = homefolder / ".cache" / "pardus-docsearch" / "docdatabase.db"  # location where the database will be placed
         self.listagain_btn.hide()
         self.warning_label2.hide()  # hide warning label
+        self.search_entry.set_placeholder_text(_("Enter the content:"))  # placeholder
+        self.warning_label1.set_label(_("The process of writing files from your computer to the database may take a long time\nDo not close the screen until the process is complete"))  # warning message is being printed
+        self.search_entry.set_width_chars(40)  # length of the text box
+        self.scrolled_window.set_min_content_height(400)  # the height of the list window is being adjusted in pixels
         self.mainstack.set_visible_child_name("page0")
         self.db_total_files = docdatabase.totalfiles(self.dbpath)
         GLib.idle_add(self.start_background_once)  # the process will run in the background immediately after the application starts
@@ -108,17 +109,15 @@ class pardusdocsearch:
         srcpath = cur.execute("SELECT source_name FROM documents").fetchall()
         srcpath = [r[0] for r in srcpath]
 
-        self.warning_label1.set_label(_("The process of writing files from your computer to the database may take a long time\nDo not close the screen until the process is complete"))  # warning message is being printed
         while True:
             doc_path = self.db_queue.get()  # the process will not proceed to other operations until data arrives from the db_queue queue
             if doc_path is None:
                 break
             # the existence of the same data in the database is checked
             if doc_path in srcpath:
-                self.status_label1.set_text(_("Skipped:\n")+doc_path)
                 continue
             else:
-                self.status_label1.set_text(_("Writing:\n")+doc_path)
+                self.status_label1.set_label(_("Writing:\n")+doc_path)
                 embedfile(doc_path)  # the process of writing to the database is being performed
         self.embed_done = True
 
@@ -221,19 +220,21 @@ class pardusdocsearch:
     # search button
     def on_search(self, button):
         self.warning_label2.hide()  # it is closed if an error message is displayed
-        self.mainstack.set_visible_child_name("page1")
-        # Arka planda çalışacak thread'i başlat
-        thread = threading.Thread(target=self.search_process, daemon=True)
-        thread.start()
-
-    def search_process(self):
         searchcontent = self.search_entry.get_text()
         if len(searchcontent) == 0:
-            self.mainstack.set_visible_child_name("mainbox")
             self.warning_label2.show()
             self.warning_label2.set_label("Enter some text to search!")
             return False
+        self.mainstack.set_visible_child_name("page1")
+        # Start the thread to run in the background
+        thread = threading.Thread(target=self.search_process, args=(searchcontent,), daemon=True)
+        thread.start()
+
+    def search_process(self, searchcontent):
         output = search(searchcontent)  # searching content
+        GLib.idle_add(self.update_search_listbox, output)
+
+    def update_search_listbox(self, output):
         # clearing a populated listbox object
         for row in self.listbox.get_children():
           row.destroy()
@@ -246,28 +247,49 @@ class pardusdocsearch:
             else:
                 row = self.create_row(srcname, f["source"], _("Content:\n")+f["chunk"], "0")
             self.listbox.add(row)
-        GLib.idle_add(self.search_process_done)
+        self.search_process_done()
 
     def search_process_done(self):
         self.mainstack.set_visible_child_name("mainbox")
-        self.listbox.show_all()
         self.listagain_btn.show()  # to return to the entire file list after the search is complete, the button must be active
-        return False  # 'GLib.idle_add' callback'ı tekrar çağrılmasın
+        self.listbox.show_all()
+        return False  # 'GLib.idle_add' callback should not be called again
     # ----------------------
 
 
+    # ----LIST AGAIN PROCESS----
     # list again button
     def on_list_again(self, button):
-        # clearing a populated listbox object
-        for row in self.listbox.get_children():
-          row.destroy()
+        self.mainstack.set_visible_child_name("page2")
+        # Start the thread to run in the background
+        thread = threading.Thread(target=self.list_again_process, daemon=True)
+        thread.start()
 
-        for f in files_list():  # files_list() --- (may be CPU/IO bound)
-            tooltip_txt = _("File full path: ")+f
-            row = self.create_row(os.path.basename(f), f, tooltip_txt, "0")  # regardless of all sources, page number 0 is returned
+    def list_again_process(self):
+        files = files_list()
+        GLib.idle_add(self.update_listbox, files)
+
+
+    def update_listbox(self, files):
+        for row in self.listbox.get_children():
+            self.listbox.remove(row)
+        for f in files:
+            row = self.create_row(
+                os.path.basename(f),
+                f,
+                _("File full path: ") + f,
+                "0"
+            )
             self.listbox.add(row)
+        self.list_again_process_done()
+        return False
+
+    def list_again_process_done(self):
+        self.mainstack.set_visible_child_name("mainbox")
         self.listbox.show_all()
         self.listagain_btn.hide()  # the button doesn't need to appear after all files are listed
+        return False  # 'GLib.idle_add' callback should not be called again
+    # ----------------------
 
 
     # about screen
